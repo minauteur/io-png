@@ -1,0 +1,5 @@
+/target/
+**/*.rs.bk
+/loops/*.wav
+*.wav
+*.png
