@@ -32,7 +32,7 @@ fn watch() -> notify::Result<()> {
     // Add a path to be watched. All files and directories at that path and
     // below will be monitored for changes.
     // try!(watcher.watch("C:\\cygwin64\\home\\Minauteur\\io-png\\loops", RecursiveMode::Recursive));
-    try!(watcher.watch("/var/www/microwavemanison.com/loops", RecursiveMode::Recursive));
+    try!(watcher.watch("/var/www/microwavemansion.com/loops", RecursiveMode::Recursive));
     
 
     // This is a simple loop, but you may want to use more complex logic here,
