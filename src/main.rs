@@ -31,7 +31,9 @@ fn watch() -> notify::Result<()> {
 
     // Add a path to be watched. All files and directories at that path and
     // below will be monitored for changes.
-    try!(watcher.watch("C:\\cygwin64\\home\\Minauteur\\io-png\\loops", RecursiveMode::Recursive));
+    // try!(watcher.watch("C:\\cygwin64\\home\\Minauteur\\io-png\\loops", RecursiveMode::Recursive));
+    try!(watcher.watch("/var/www/microwavemanison.com/loops", RecursiveMode::Recursive));
+    
 
     // This is a simple loop, but you may want to use more complex logic here,
     // for example to handle I/O.
@@ -39,10 +41,35 @@ fn watch() -> notify::Result<()> {
         match rx.recv() {
             Ok(event) => {
                 if let DebouncedEvent::Create(file_path) = event {
-                        println!("file created! checking file...");
-                    if Some(OsStr::new("wav")) == file_path.clone().extension() && !check_img(&file_path) {
-                        println!("found a .wav, but no corresponding image! generating...");
-                        generate_img(&file_path);
+                    println!("file added to /loops! checking extension...");
+                    match file_path.clone().extension() {
+                        Some(os_str) => {
+                            match os_str.to_str() {
+                                Some("wav") => {
+                                    println!("wav file added! checking for image...");
+                                    if !check_img(&file_path) {
+                                        println!("found a wav file, but no corresponding image! generating...");
+                                        generate_img(&file_path);
+                                    } else {
+                                        println!("We already have an image for this audio. neato!");
+                                    }
+                                },
+                                Some("mp3") => {
+                                    println!("mp3 file added! checking for image...");
+                                    if !check_img(&file_path) {
+                                        println!("found an mp3 file, but no corresponding image! generating...");
+                                        generate_img(&file_path);
+                                    } else {
+                                        println!("We already have an image for this audio. neato!");
+                                    }
+                                },
+                                Some(ext) => println!("file added wasn't an mp3 or a wav! ext == {}", &ext),
+                                _ => println!("Well, this is awkward..."),
+                            }
+                        },
+                        None => {
+                            println!("no extension found!");
+                        }
                     }
                 } else {
                     println!("{:?}", event)

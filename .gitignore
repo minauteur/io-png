@@ -1,5 +1,7 @@
 /target/
 **/*.rs.bk
 /loops/*.wav
+/loops/*.mp3
 *.wav
 *.png
+*.mp3
