@@ -1,25 +1,19 @@
 extern crate image;
 extern crate notify;
-// extern crate byteorder;
-// use byteorder::{ReadBytesExt, WriteBytesExt, BigEndian, LittleEndian};
-use std::path::Path;
+extern crate gif;
+
 use std::fs::File;
 use std::path::PathBuf;
-use std::io::{Read, Write, BufReader, BufWriter};
-use std::ffi::OsStr;
-
-use image::png::PNGEncoder;
-use image::png;
-use image::gif::Encoder;
-use image::{save_buffer, ImageBuffer, ColorType, Rgb};
+use std::io::{Read, BufReader };
 
 
+use gif::SetParameter;
 use notify::{RecommendedWatcher, Watcher, RecursiveMode, DebouncedEvent};
 use std::sync::mpsc::channel;
 use std::time::Duration;
 
-const WIDTH: u32 = 100;
-const HEIGHT:u32 = 100;
+const WIDTH: u16 = 100;
+const HEIGHT: u16 = 100;
 
 fn watch() -> notify::Result<()> {
     // Create a channel to receive the events.
@@ -27,12 +21,12 @@ fn watch() -> notify::Result<()> {
 
     // Automatically select the best implementation for your platform.
     // You can also access each implementation directly e.g. INotifyWatcher.
-    let mut watcher: RecommendedWatcher = try!(Watcher::new(tx, Duration::from_secs(2)));
+    let mut watcher: RecommendedWatcher = Watcher::new(tx, Duration::from_secs(2))?;
 
     // Add a path to be watched. All files and directories at that path and
     // below will be monitored for changes.
-    // try!(watcher.watch("C:\\cygwin64\\home\\Minauteur\\io-png\\loops", RecursiveMode::Recursive));
-    try!(watcher.watch("/var/www/microwavemansion.com/loops", RecursiveMode::Recursive));
+    watcher.watch("C:\\Users\\Minauteur\\io-png\\loops", RecursiveMode::Recursive)?;
+    // try!(watcher.watch("/var/www/microwavemansion.com/loops", RecursiveMode::Recursive));
     
 
     // This is a simple loop, but you may want to use more complex logic here,
@@ -81,31 +75,37 @@ fn watch() -> notify::Result<()> {
 }
 
 fn check_img(p_buf: &PathBuf) -> bool {
-    p_buf.with_extension("png").exists()
+    p_buf.with_extension("gif").exists()
 }
 
 fn generate_img(p_buf: &PathBuf) {
-    let image_buffer = match File::create(p_buf.with_extension("png")) {
+    let mut image_buffer = match File::create(p_buf.with_extension("gif")) {
         Ok(file) => file,
         Err(e) => panic!("error! {}", e),
     };
     let mut bytes_vec: Vec<u8> = Vec::new();
     if let Ok(audio_data) = File::open(p_buf) {
+        let mut gif = gif::Encoder::new(&mut image_buffer, WIDTH, HEIGHT, &[]).expect("problem initializing encoder!");
+        gif.set(gif::Repeat::Infinite).unwrap();
         // let mut image = ImageBuffer::<Rgb<u8>, Vec<u8>>::new(WIDTH, HEIGHT);
-        BufReader::new(audio_data).read_to_end(&mut bytes_vec).unwrap();
-        if bytes_vec.len() >= 1024*1024 {
-            bytes_vec = bytes_vec[bytes_vec.len()-bytes_vec.len()/2..bytes_vec.len()-bytes_vec.len()/4].to_owned();
-            if bytes_vec.len() >=1024*1024 {
-                bytes_vec = bytes_vec[..1024*1024].to_owned()
+        BufReader::new(audio_data).read_to_end(&mut bytes_vec).expect("something went wrong  reading audio data!");
+
+        let mut bytes_iter = bytes_vec.into_iter();
+        let mut frame_count = 1;
+        while frame_count <= 20 {
+            let mut cur_frame = Vec::new();
+            for _ in 0..30000 {
+                    if let Some(rgb) = bytes_iter.next() {
+                        cur_frame.push(rgb);
+                    }
+                    else { cur_frame.push(0u8) }
             }
+
+            let new_frame = gif::Frame::from_rgb(100, 100, &cur_frame.as_slice());
+            gif.write_frame(&new_frame).expect("something went wrong writing frame data!");
+            println!("wrote frame {}!", &frame_count);
+            frame_count = frame_count+1;
         }
-        // let audio_bytes = bytes_vec[bytes_vec.len()%3..bytes_vec.len()].to_owned();
-        // for pixel in image.pixels_mut() {
-        //     if let Some(data) = audio_bytes.into_iter().next() {
-        //         pixel.data = Rgb();
-        //     }
-        // }
-        PNGEncoder::new(image_buffer).encode(&bytes_vec, 100, 100, ColorType::RGB(16)).expect("something went wrong writing to image file!");
         println!("wrote image!");
     }
 }

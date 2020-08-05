@@ -5,3 +5,4 @@
 *.wav
 *.png
 *.mp3
+Cargo.lock

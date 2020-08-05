@@ -4,6 +4,7 @@ version = "0.1.0"
 authors = ["minauteur <Thompennington@gmail.com>"]
 
 [dependencies]
+gif = "0.10.3"
 image = "0.18.0"
 notify = "4.0.3"
 byteorder = "1"
